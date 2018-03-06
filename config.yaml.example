@@ -1,0 +1,7 @@
+aircraft_clubs:
+  url: https://www.aircraftclubs.com
+  username: user
+  password: pass
+  aircraft:
+    N12345:
+      id: 1001
