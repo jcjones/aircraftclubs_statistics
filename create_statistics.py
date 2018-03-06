@@ -101,13 +101,9 @@ def avg_days_between_usage(event_list):
       deltas_by_name[aircraft_name].append(delta_between.total_seconds() / (60*60*24))
       last_event_by_name[aircraft_name] = event
 
-  # pprint.pprint(deltas_by_name)
-
   results = {}
   for aircraft_name in deltas_by_name.keys():
     results[aircraft_name] = statistics.mean(deltas_by_name[aircraft_name])
-
-  # pprint.pprint(results)
 
   return results
 
@@ -152,11 +148,7 @@ def aircraft_available_by_weekday(event_list, aircraft):
   for date, count in available_aircraft_by_date.items():
     weekday_to_availability_list[date.strftime("%A")].append(count)
 
-  average_availability_by_weekday = {}
-  for weekday, data in weekday_to_availability_list.items():
-    average_availability_by_weekday[weekday] = statistics.mean(data)
-
-  return average_availability_by_weekday
+  return weekday_to_availability_list
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--json", help="output JSON to this file")

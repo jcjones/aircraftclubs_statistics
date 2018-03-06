@@ -32,7 +32,8 @@ function plot(taaDoW, avgDays, lengthOfFlight, usageByWeekday,
     let traces = [ taaDoW ];
     let layout = Object.assign({
       yaxis: {
-        title: "Average Aircraft Completely Unscheduled"
+        title: "Average Aircraft Completely Unscheduled",
+        dtick: 1.0
       },
       xaxis: {
         title: "Day of Week"
@@ -96,9 +97,16 @@ fetch("/wp-content/uploads/statistics/data.json")
 .then((data) => {
   console.log(data);
 
-  let taaDoW = { type: "bar", name: "Aircraft Available by Day of Week",
-                 x: Object.keys(data['aircraft_available_by_weekday']),
-                 y: Object.values(data['aircraft_available_by_weekday']) };
+  let taaDoW = { type: "box", name: "Aircraft Available by Day of Week",
+                 x: [], y: [], boxmean: 'sd', boxpoints: false };
+  {
+    for (let dayName of Object.keys(data['aircraft_available_by_weekday'])) {
+      for (let y of data['aircraft_available_by_weekday'][dayName]) {
+        insertPoint(taaDoW, dayName, y);
+      }
+    }
+  }
+  console.log(taaDoW);
 
   let avgDays = { type: "bar", name: "Average Days Between Flights",
                  x: Object.keys(data['avg_days_between_usage_by_aircraft']),
