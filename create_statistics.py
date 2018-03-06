@@ -29,10 +29,12 @@ def get_events(session, url, aircraft_list, period_start, period_end):
     for event in r.json():
       start = datetime.strptime(event['start'], "%Y-%m-%d %H:%M:%S")
       end = datetime.strptime(event['end'], "%Y-%m-%d %H:%M:%S")
+      is_maintenance = "maint" in event['icon']
 
       event_list.append({'aircraft_id': aircraft['id'], 'aircraft_name': aircraft_name,
                          'start': start, 'end': end, 'duration': end-start,
-                         'weekend': is_weekend(start, end) })
+                         'weekend': is_weekend(start, end),
+                         'is_maintenance': is_maintenance })
 
   return sorted(event_list, key=lambda event: event['start'])
 
@@ -75,6 +77,9 @@ def weekend_weekday_utilization(event_list):
 def length_histogram(event_list):
   results=Counter()
   for event in event_list:
+    if event['is_maintenance']:
+      continue
+
     length_hours = int(math.ceil(event['duration'].total_seconds() / (60*60)))
     results[length_hours] += 1
 
@@ -96,19 +101,22 @@ def avg_days_between_usage(event_list):
       deltas_by_name[aircraft_name].append(delta_between.total_seconds() / (60*60*24))
       last_event_by_name[aircraft_name] = event
 
-  pprint.pprint(deltas_by_name)
+  # pprint.pprint(deltas_by_name)
 
   results = {}
   for aircraft_name in deltas_by_name.keys():
     results[aircraft_name] = statistics.mean(deltas_by_name[aircraft_name])
 
-  pprint.pprint(results)
+  # pprint.pprint(results)
 
   return results
 
 def usage_by_weekday(event_list):
   day_of_week_by_name=defaultdict(Counter)
   for event in event_list:
+    if event['is_maintenance']:
+      continue
+
     x = event['start']
     while x < event['end']:
       day_of_week_by_name[event['aircraft_name']][x.strftime("%A")] += 1
