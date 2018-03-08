@@ -8,7 +8,10 @@ from collections import Counter, defaultdict, OrderedDict
 config = {}
 
 class RotationSchedule:
-  def Configure(self, airports, period):
+  def __init__(self):
+    self.airports = []
+
+  def configure(self, airports, period):
     self.airports = airports
 
     if 'months' in period:
@@ -21,7 +24,10 @@ class RotationSchedule:
     else:
       self.reference = period['reference_date']
 
-  def GetAirportOnDate(self, aircraft, date):
+  def get_airport_on_date(self, aircraft, date):
+    if len(self.airports) == 0:
+      return None
+
     delta = relativedelta(date.date(), self.reference)
     delta_months = (delta.years * 12) + delta.months
 
@@ -59,7 +65,7 @@ def get_events(session, url, rotation, aircraft_list, period_start, period_end):
       event_list.append({'aircraft_id': aircraft['id'], 'aircraft_name': aircraft_name,
                          'start': start, 'end': end, 'duration': end-start,
                          'weekend': is_weekend(start, end),
-                         'airport': rotation.GetAirportOnDate(aircraft, start),
+                         'airport': rotation.get_airport_on_date(aircraft, start),
                          'is_maintenance': is_maintenance })
 
   return sorted(event_list, key=lambda event: event['start'])
@@ -194,7 +200,7 @@ time_horizon = timedelta(weeks=args.weeks)
 
 rotation_schedule = RotationSchedule()
 if 'rotation' in config['aircraft_clubs']:
-  rotation_schedule.Configure(config['aircraft_clubs']['rotation']['airports'],
+  rotation_schedule.configure(config['aircraft_clubs']['rotation']['airports'],
                               config['aircraft_clubs']['rotation']['period'])
 
 aircraft = config['aircraft_clubs']['aircraft']
