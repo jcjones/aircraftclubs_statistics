@@ -150,9 +150,10 @@ fetch("/wp-content/uploads/statistics/data.json")
     let bar = { type: "bar", name: aircraft,
                 marker: {
                   color: aircraft_to_color[aircraft],
-                },
-                x: Object.keys(data['usage_by_weekday'][aircraft]),
-                y: Object.values(data['usage_by_weekday'][aircraft]) };
+                }, x: [], y: [] };
+    for (let weekday of list_weekdays) {
+      insertPoint(bar, weekday, data['usage_by_weekday'][aircraft][weekday]);
+    }
     usageByWeekday.push(bar);
   }
 
