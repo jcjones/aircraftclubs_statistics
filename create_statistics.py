@@ -106,6 +106,12 @@ def weekend_weekday_utilization(event_list):
       results['weekday'][event['aircraft_name']] += 1
   return results
 
+def airport_utilization(event_list):
+  results=Counter()
+  for event in event_list:
+    results[event['airport']] += 1
+  return results
+
 def length_histogram(event_list):
   results=Counter()
   for event in event_list:
@@ -210,10 +216,12 @@ events = get_events(s, config['aircraft_clubs']['url'], rotation_schedule,
 dataset = {}
 dataset['dataset_metadata'] = gather_metadata(events)
 dataset['weekend_weekday_utilization'] = weekend_weekday_utilization(events)
+dataset['airport_utilization'] = airport_utilization(events)
 dataset['length_of_reservation_by_hours'] = length_histogram(events)
 dataset['avg_days_between_usage_by_aircraft'] = avg_days_between_usage(events)
 dataset['usage_by_weekday'] = usage_by_weekday(events)
 dataset['aircraft_available_by_weekday'] = aircraft_available_by_weekday(events, aircraft)
+
 
 pprint.pprint(dataset)
 

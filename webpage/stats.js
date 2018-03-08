@@ -17,7 +17,7 @@ function insertPoint(trace, x, y) {
 }
 
 function plot(taaDoW, avgDays, lengthOfFlight, usageByWeekday,
-              weekdayToWeekend) {
+              weekdayToWeekend, airportUtilization) {
   let defaultLayout = {
     margin: { t: 0 },
     legend: {
@@ -88,6 +88,15 @@ function plot(taaDoW, avgDays, lengthOfFlight, usageByWeekday,
       Plotly.plot(plotDiv, traces, layout);
     }
   }
+
+  {
+    let layout = Object.assign({}, defaultLayout);
+    let traces = [ airportUtilization ];
+    let plotDiv = document.getElementById('airportUtilization');
+    if (plotDiv) {
+      Plotly.plot(plotDiv, traces, layout);
+    }
+  }
 }
 
 fetch("/wp-content/uploads/statistics/data.json")
@@ -138,8 +147,12 @@ fetch("/wp-content/uploads/statistics/data.json")
                            values: [ data['weekend_weekday_utilization']['weekday']['total'],
                                      data['weekend_weekday_utilization']['weekend']['total'] ] };
 
+  let airportUtilization = { name: "Reservations by Airport", type: "pie",
+                             labels: Object.keys(data['airport_utilization']),
+                             values: Object.values(data['airport_utilization']) };
+
   let plotIt = plot.bind(null, taaDoW, avgDays, lengthOfFlight, usageByWeekday,
-                         weekdayToWeekend);
+                         weekdayToWeekend, airportUtilization);
 
   {
     let days = document.getElementById('metadataDays');
