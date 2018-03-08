@@ -37,7 +37,7 @@ function plot(taaDoW, numDays, lengthOfFlight, usageByWeekday,
       xaxis: {
         title: "Day of Week"
       },
-      boxmode: 'group'
+      barmode: 'stack'
     }, defaultLayout);
     let plotDiv = document.getElementById('aaDoW');
     if (plotDiv) {
