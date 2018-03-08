@@ -2,10 +2,35 @@ import math, statistics, pprint, json, argparse
 import yaml
 import requests
 from datetime import datetime, timedelta
+from dateutil.relativedelta import relativedelta
 from collections import Counter, defaultdict, OrderedDict
 
 config = {}
 
+class RotationSchedule:
+  def Configure(self, airports, period):
+    self.airports = airports
+
+    if 'months' in period:
+      self.monthdelta = period['months']
+    else:
+      raise("Unknown period: " + json.dumps(period))
+
+    if isinstance(period['reference_date'], str):
+      self.reference = datetime.strptime(period['reference_date'], "%Y-%m-%d")
+    else:
+      self.reference = period['reference_date']
+
+  def GetAirportOnDate(self, aircraft, date):
+    delta = relativedelta(date.date(), self.reference)
+    delta_months = (delta.years * 12) + delta.months
+
+    div, _ = divmod(delta_months, self.monthdelta)
+    div += self.airports.index(aircraft['airport_at_reference'])
+
+    _, cycle_count = divmod(div, len(self.airports))
+
+    return self.airports[cycle_count]
 
 def get_authenticated_session(url, username, password):
   s = requests.Session()
@@ -18,7 +43,7 @@ def get_authenticated_session(url, username, password):
      raise("Could not login: " + login_result)
   return s
 
-def get_events(session, url, aircraft_list, period_start, period_end):
+def get_events(session, url, rotation, aircraft_list, period_start, period_end):
   event_list = []
 
   for aircraft_name, aircraft in aircraft_list.items():
@@ -34,6 +59,7 @@ def get_events(session, url, aircraft_list, period_start, period_end):
       event_list.append({'aircraft_id': aircraft['id'], 'aircraft_name': aircraft_name,
                          'start': start, 'end': end, 'duration': end-start,
                          'weekend': is_weekend(start, end),
+                         'airport': rotation.GetAirportOnDate(aircraft, start),
                          'is_maintenance': is_maintenance })
 
   return sorted(event_list, key=lambda event: event['start'])
@@ -166,9 +192,14 @@ s = get_authenticated_session(config['aircraft_clubs']['url'],
 today = datetime.today()
 time_horizon = timedelta(weeks=args.weeks)
 
+rotation_schedule = RotationSchedule()
+if 'rotation' in config['aircraft_clubs']:
+  rotation_schedule.Configure(config['aircraft_clubs']['rotation']['airports'],
+                              config['aircraft_clubs']['rotation']['period'])
+
 aircraft = config['aircraft_clubs']['aircraft']
-events = get_events(s, config['aircraft_clubs']['url'], aircraft,
-                    today - time_horizon, today)
+events = get_events(s, config['aircraft_clubs']['url'], rotation_schedule,
+                    aircraft, today - time_horizon, today)
 
 dataset = {}
 dataset['dataset_metadata'] = gather_metadata(events)

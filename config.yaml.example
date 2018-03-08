@@ -2,6 +2,16 @@ aircraft_clubs:
   url: https://www.aircraftclubs.com
   username: user
   password: pass
+  rotation:
+    airports:
+      - DFW
+      - IAD
+    period:
+      months:
+        4
+      reference_date:
+        2018-01-01
   aircraft:
     N12345:
       id: 1001
+      airport_at_reference: DFW
