@@ -123,11 +123,12 @@ def length_histogram(event_list):
 
   return OrderedDict(sorted(results.items(), key=lambda t: t[0]))
 
-def avg_days_between_usage(event_list):
+def days_between_usage(event_list):
   deltas_by_name=defaultdict(list)
   last_event_by_name = {}
 
   for event in event_list:
+
     aircraft_name = event['aircraft_name']
     if aircraft_name not in last_event_by_name:
       last_event_by_name[aircraft_name] = event
@@ -135,15 +136,14 @@ def avg_days_between_usage(event_list):
       if event['start'].date() == last_event_by_name[aircraft_name]['end'].date():
         continue
 
-      delta_between = event['start'] - last_event_by_name[aircraft_name]['end']
-      deltas_by_name[aircraft_name].append(delta_between.total_seconds() / (60*60*24))
+      # Don't count either side of a maintenance activity
+      if not event['is_maintenance'] and not last_event_by_name[aircraft_name]['is_maintenance']:
+        delta_between = event['start'] - last_event_by_name[aircraft_name]['end']
+        deltas_by_name[aircraft_name].append(abs(delta_between).total_seconds() / (60*60*24))
+
       last_event_by_name[aircraft_name] = event
 
-  results = {}
-  for aircraft_name in deltas_by_name.keys():
-    results[aircraft_name] = statistics.mean(deltas_by_name[aircraft_name])
-
-  return results
+  return deltas_by_name
 
 def usage_by_weekday(event_list):
   day_of_week_by_name=defaultdict(Counter)
@@ -239,7 +239,7 @@ dataset['dataset_metadata'] = gather_metadata(events)
 dataset['weekend_weekday_utilization'] = weekend_weekday_utilization(events)
 dataset['airport_utilization'] = airport_utilization(events)
 dataset['length_of_reservation_by_hours'] = length_histogram(events)
-dataset['avg_days_between_usage_by_aircraft'] = avg_days_between_usage(events)
+dataset['days_between_usage_by_aircraft'] = days_between_usage(events)
 dataset['usage_by_weekday'] = usage_by_weekday(events)
 dataset['aircraft_available_by_airport_and_weekday'] = aircraft_available_by_airport_and_weekday(events, aircraft)
 

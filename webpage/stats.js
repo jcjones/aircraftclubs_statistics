@@ -16,7 +16,7 @@ function insertPoint(trace, x, y) {
   }
 }
 
-function plot(taaDoW, avgDays, lengthOfFlight, usageByWeekday,
+function plot(taaDoW, numDays, lengthOfFlight, usageByWeekday,
               weekdayToWeekend, airportUtilization) {
   let defaultLayout = {
     margin: { t: 0 },
@@ -32,7 +32,7 @@ function plot(taaDoW, avgDays, lengthOfFlight, usageByWeekday,
     let layout = Object.assign({
       yaxis: {
         title: "Average Aircraft Completely Unscheduled",
-        dtick: 1.0
+        dtick: 1.0, hoverformat: '.1f'
       },
       xaxis: {
         title: "Day of Week"
@@ -46,9 +46,11 @@ function plot(taaDoW, avgDays, lengthOfFlight, usageByWeekday,
   }
 
   {
-    let traces = [ avgDays ];
-    let plotDiv = document.getElementById('avgDays');
-    let layout = Object.assign({}, defaultLayout);
+    let traces = [ numDays ];
+    let plotDiv = document.getElementById('numDays');
+    let layout = Object.assign({
+      yaxis: { hoverformat: '.1f' }
+    }, defaultLayout);
     if (plotDiv) {
       Plotly.plot(plotDiv, traces, layout);
     }
@@ -110,7 +112,7 @@ fetch("/wp-content/uploads/statistics/data.json")
 
   for (let airport of Object.keys(data['aircraft_available_by_airport_and_weekday'])) {
 
-    let trace = { type: "bar", name: "Aircraft Available in " + airport,
+    let trace = { type: "bar", name: airport + " Aircraft Available",
                  x: [], y: [] };
 
     let available_by_airport = data['aircraft_available_by_airport_and_weekday'][airport];
@@ -123,9 +125,15 @@ fetch("/wp-content/uploads/statistics/data.json")
   }
 
 
-  let avgDays = { type: "bar", name: "Average Days Between Flights",
-                 x: Object.keys(data['avg_days_between_usage_by_aircraft']),
-                 y: Object.values(data['avg_days_between_usage_by_aircraft']) };
+  let numDays = { type: "box", name: "Number of Days Between Flights",
+                  x: [], y: [], boxmean: true, boxpoints: "all" };
+  {
+    for (let aircraft of Object.keys(data['days_between_usage_by_aircraft'])) {
+      for (let days of data['days_between_usage_by_aircraft'][aircraft]) {
+        insertPoint(numDays, aircraft, days);
+      }
+    }
+  }
 
   let lengthOfFlight = { name: "Histogram of Reservation Lengths",
                          x: [], y: [], type: "bar" };
@@ -157,7 +165,7 @@ fetch("/wp-content/uploads/statistics/data.json")
                              labels: Object.keys(data['airport_utilization']),
                              values: Object.values(data['airport_utilization']) };
 
-  let plotIt = plot.bind(null, taaDoW, avgDays, lengthOfFlight, usageByWeekday,
+  let plotIt = plot.bind(null, taaDoW, numDays, lengthOfFlight, usageByWeekday,
                          weekdayToWeekend, airportUtilization);
 
   {
