@@ -158,35 +158,56 @@ def usage_by_weekday(event_list):
 
   return day_of_week_by_name
 
-def aircraft_available_by_weekday(event_list, aircraft):
+def aircraft_available_by_airport_and_weekday(event_list, aircraft, airports=["CHD", "DVT"]):
+  aircraft_per_airport, mod = divmod(len(aircraft), len(airports))
+  if mod != 0:
+    raise "Uneven aircraft distribution!"
+
+  # storage
+  available_aircraft_by_airport_and_date = defaultdict(dict)
+  # accumulators
   current_date = None
   aircraft_seen = []
-  available_aircraft_by_date = {}
+  airport_usage = Counter()
 
   for event in event_list:
     if event['start'].date() != current_date:
+      # Changing days, so let's record what we know (if we aren't at the beginning)
       if current_date != None:
         # Note how many aircraft were not seen
-        available_aircraft_by_date[current_date] = len(aircraft) - len(aircraft_seen)
+        for airport in airports:
+          available_aircraft_by_airport_and_date[airport][current_date] = aircraft_per_airport - airport_usage[airport]
 
         # Initialize any gaps
         if event['start'].date() - current_date > timedelta(days=1):
           x = current_date
           while x < event['start'].date():
-            available_aircraft_by_date[x] = len(aircraft)
+            for airport in airports:
+              available_aircraft_by_airport_and_date[airport][x] = aircraft_per_airport
             x += timedelta(days=1)
 
       current_date = event['start'].date()
+      airport_usage.clear()
       aircraft_seen.clear()
 
     if event['aircraft_name'] not in aircraft_seen:
       aircraft_seen.append(event['aircraft_name'])
+      airport_usage[event['airport']] += 1
 
-  weekday_to_availability_list = defaultdict(list)
-  for date, count in available_aircraft_by_date.items():
-    weekday_to_availability_list[date.strftime("%A")].append(count)
+  airport_and_weekday_to_availability_list = {}
+  for airport in airports:
+    airport_and_weekday_to_availability_list[airport] = defaultdict(list)
 
-  return weekday_to_availability_list
+  for airport, date_list in available_aircraft_by_airport_and_date.items():
+    for date, count in date_list.items():
+      airport_and_weekday_to_availability_list[airport][date.strftime("%A")].append(count)
+
+  airport_and_dow_to_mean_available_aircraft = defaultdict(dict)
+  for airport, date_list in airport_and_weekday_to_availability_list.items():
+    for dow, counts in date_list.items():
+      airport_and_dow_to_mean_available_aircraft[airport][dow] = statistics.mean(counts)
+
+  return airport_and_dow_to_mean_available_aircraft
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--json", help="output JSON to this file")
@@ -220,7 +241,7 @@ dataset['airport_utilization'] = airport_utilization(events)
 dataset['length_of_reservation_by_hours'] = length_histogram(events)
 dataset['avg_days_between_usage_by_aircraft'] = avg_days_between_usage(events)
 dataset['usage_by_weekday'] = usage_by_weekday(events)
-dataset['aircraft_available_by_weekday'] = aircraft_available_by_weekday(events, aircraft)
+dataset['aircraft_available_by_airport_and_weekday'] = aircraft_available_by_airport_and_weekday(events, aircraft)
 
 
 pprint.pprint(dataset)

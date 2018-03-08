@@ -29,7 +29,6 @@ function plot(taaDoW, avgDays, lengthOfFlight, usageByWeekday,
   };
 
   {
-    let traces = [ taaDoW ];
     let layout = Object.assign({
       yaxis: {
         title: "Average Aircraft Completely Unscheduled",
@@ -38,10 +37,11 @@ function plot(taaDoW, avgDays, lengthOfFlight, usageByWeekday,
       xaxis: {
         title: "Day of Week"
       },
+      boxmode: 'group'
     }, defaultLayout);
     let plotDiv = document.getElementById('aaDoW');
     if (plotDiv) {
-      Plotly.plot(plotDiv, traces, layout);
+      Plotly.plot(plotDiv, taaDoW, layout);
     }
   }
 
@@ -106,16 +106,22 @@ fetch("/wp-content/uploads/statistics/data.json")
 .then((data) => {
   console.log(data);
 
-  let taaDoW = { type: "box", name: "Aircraft Available by Day of Week",
-                 x: [], y: [], boxmean: 'sd', boxpoints: false };
-  {
-    for (let dayName of Object.keys(data['aircraft_available_by_weekday'])) {
-      for (let y of data['aircraft_available_by_weekday'][dayName]) {
-        insertPoint(taaDoW, dayName, y);
-      }
+  let taaDoW = [];
+
+  for (let airport of Object.keys(data['aircraft_available_by_airport_and_weekday'])) {
+
+    let trace = { type: "bar", name: "Aircraft Available in " + airport,
+                 x: [], y: [] };
+
+    let available_by_airport = data['aircraft_available_by_airport_and_weekday'][airport];
+
+    for (let dayName of Object.keys(available_by_airport)) {
+      insertPoint(trace, dayName, available_by_airport[dayName]);
     }
+
+    taaDoW.push(trace);
   }
-  console.log(taaDoW);
+
 
   let avgDays = { type: "bar", name: "Average Days Between Flights",
                  x: Object.keys(data['avg_days_between_usage_by_aircraft']),
