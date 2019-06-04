@@ -216,7 +216,7 @@ parser.add_argument("--weeks", help="Number of weeks to process", default=6, typ
 args = parser.parse_args()
 
 with open('config.yaml', 'r') as confFile:
-  config = yaml.load(confFile)
+  config = yaml.load(confFile, Loader=yaml.SafeLoader)
 
 s = get_authenticated_session(config['aircraft_clubs']['url'],
                               config['aircraft_clubs']['username'],
